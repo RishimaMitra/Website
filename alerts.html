@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Alerts Hub — Sensio</title>
+  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="components.css" />
+  <link rel="stylesheet" href="pages.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">S</div>
+      <div class="sidebar-logo-text">Sensio<span></span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-section-label">Main</div>
+      <a href="index.html" class="nav-item">
+        <span class="nav-icon"></span><span class="nav-label">Dashboard</span>
+      </a>
+      <a href="tenders.html" class="nav-item">
+        <span class="nav-icon"></span><span class="nav-label">All Tenders</span>
+      </a>
+      <a href="saved.html" class="nav-item">
+        <span class="nav-icon"></span><span class="nav-label">Saved Tenders</span>
+      </a>
+      <a href="alerts.html" class="nav-item active">
+        <span class="nav-icon"></span><span class="nav-label">Alerts & Alerts</span>
+      </a>
+      <a href="analytics.html" class="nav-item">
+        <span class="nav-icon"></span><span class="nav-label">Analytics Suite</span>
+      </a>
+    </nav>
+  </aside>
+
+  <div class="main-content" id="mainContent">
+    <header class="topbar">
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <button id="sidebarToggleBtn" class="btn btn-ghost" style="padding: 6px 10px; font-size: 14px;"><span>◀</span></button>
+        <div class="topbar-title">Operations Signal Panel</div>
+      </div>
+      <div class="topbar-actions">
+        <div class="avatar">S</div>
+      </div>
+    </header>
+
+    <main class="page-content">
+      <div class="page-header fade-in-up" style="margin-bottom: 32px;">
+        <h1>Alerts &amp; Notification Triggers</h1>
+        <p style="color: var(--text-muted); font-size: 15px; margin-top: 4px;">Real-time automated processing loops screening submission exceptions and pipeline matching criteria.</p>
+      </div>
+
+      <div class="alerts-container fade-in-up">
+        <div class="alerts-panel">
+          <div class="panel-header">
+            <span>⏳</span> Operational Timeline Alerts
+          </div>
+          <div id="alertsList" class="alert-list"></div>
+        </div>
+
+        <div class="alerts-panel">
+          <div class="panel-header">
+            <span>📢</span> Pipeline Stream Notifications
+          </div>
+          <div id="notificationsList" class="alert-list"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-overlay" id="tenderModalOverlay">
+  <div class="modal" id="tenderModal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Tender Specifications</div>
+      <button class="modal-close" data-modal-close="tenderModalOverlay">✕</button>
+    </div>
+    <div id="modalGrid"></div>
+    <div class="modal-section">
+      <div class="modal-section-label">Scope Details</div>
+      <div id="modalDescription"></div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Eligibility Guidelines</div>
+      <div id="modalEligibility"></div>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-label">Raw Data Export Asset</div>
+      <div id="modalLink"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="tenderModalOverlay">Close Modal</button>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script src="ui.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    renderAlertsAndNotifications();
+  });
+
+  function renderAlertsAndNotifications() {
+    const alertsList = document.getElementById('alertsList');
+    const notificationsList = document.getElementById('notificationsList');
+    if (!alertsList || !notificationsList) return;
+
+    const tenders = window.SensioData?.tenders || [];
+    let alertsHtml = '';
+    let notificationsHtml = '';
+
+    tenders.forEach(item => {
+      const remainingDays = calculateDaysRemaining(item.closingDate);
+      const openingDays = calculateDaysRemaining(item.openingDate);
+
+      // Section 1: Timeline Alerts (Expired or Closing Soon <= 7 days)
+      if (remainingDays < 0) {
+        alertsHtml += `
+          <div class="alert-item" style="border-left: 4px solid var(--color-crimson);">
+            <div class="alert-item-header">
+              <div class="alert-item-title">${item.title}</div>
+              <span class="alert-badge" style="background: var(--color-crimson-light); color: var(--color-crimson);">OVERDUE</span>
+            </div>
+            <div class="alert-meta">
+              <span>ID: <strong>${item.id}</strong> | Region: ${item.country}</span>
+              <button class="btn btn-ghost" onclick="openTenderModal('${item.id}')" style="padding: 4px 8px; font-size: 11px;">Inspect</button>
+            </div>
+            <div style="font-size: 11px; color: var(--color-crimson); font-weight:600; margin-top: 4px;">⚠️ Filing locked. Terminated ${Math.abs(remainingDays)} days ago (${item.closingDate})</div>
+          </div>
+        `;
+      } else if (remainingDays <= 7) {
+        alertsHtml += `
+          <div class="alert-item" style="border-left: 4px solid var(--color-butter);">
+            <div class="alert-item-header">
+              <div class="alert-item-title">${item.title}</div>
+              <span class="alert-badge" style="background: var(--color-butter-light); color: var(--color-butter);">CRITICAL EXPIRY</span>
+            </div>
+            <div class="alert-meta">
+              <span>ID: <strong>${item.id}</strong> | Region: ${item.country}</span>
+              <button class="btn btn-ghost" onclick="openTenderModal('${item.id}')" style="padding: 4px 8px; font-size: 11px;">Inspect</button>
+            </div>
+            <div style="font-size: 11px; color: var(--color-butter); font-weight:600; margin-top: 4px;">⏰ Action required: Only ${remainingDays} days remaining until freeze (${item.closingDate})</div>
+          </div>
+        `;
+      }
+
+      // Section 2: Pipeline Notifications (High Relevancy Matching >= 80% or New Scrapes)
+      let isHighRelevancy = item.relevancyScore >= 0.80;
+      let isNewMatch = openingDays <= 0 && openingDays >= -7; // Opened in last 7 days from workspace anchor
+
+      if (isHighRelevancy || isNewMatch) {
+        let badgeStyle = '';
+        let badgeLabel = '';
+        let descInfo = '';
+
+        if (isHighRelevancy && isNewMatch) {
+          badgeStyle = 'background: var(--color-teal-light); color: var(--color-teal); border: 1px solid var(--color-teal);';
+          badgeLabel = 'CRITICAL NEW MATCH';
+          descInfo = `High-yield alignment evaluated at ${(item.relevancyScore * 100).toFixed(0)}%. Indexed fresh into active pipeline matrix on ${item.openingDate}.`;
+        } else if (isHighRelevancy) {
+          badgeStyle = 'background: var(--color-blue-light); color: var(--color-blue);';
+          badgeLabel = 'HIGH RELEVANCY';
+          descInfo = `Match weight core processed at <strong>${(item.relevancyScore * 100).toFixed(0)}%</strong> alignment vectors.`;
+        } else {
+          badgeStyle = 'background: var(--color-teal-light); color: var(--color-teal);';
+          badgeLabel = 'NEW ENTRY';
+          descInfo = `Fresh procurement sweep successfully parsed into server catalog on ${item.openingDate}.`;
+        }
+
+        notificationsHtml += `
+          <div class="alert-item" style="border-left: 4px solid ${isHighRelevancy ? 'var(--color-blue)' : 'var(--color-teal)'};">
+            <div class="alert-item-header">
+              <div class="alert-item-title">${item.title}</div>
+              <span class="alert-badge" style="${badgeStyle}">${badgeLabel}</span>
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin: 4px 0;">${descInfo}</div>
+            <div class="alert-meta">
+              <span>ID: <strong>${item.id}</strong> | Vector: <span style="text-transform:capitalize; font-weight:600;">${item.category}</span></span>
+              <button class="btn btn-ghost" onclick="openTenderModal('${item.id}')" style="padding: 4px 8px; font-size: 11px;">Specs</button>
+            </div>
+          </div>
+        `;
+      }
+    });
+
+    if (!alertsHtml) alertsList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 32px; font-size: 14px;">No immediate critical timeline exceptions observed.</div>`;
+    else alertsList.innerHTML = alertsHtml;
+
+    if (!notificationsHtml) notificationsList.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 32px; font-size: 14px;">No new or high-relevancy anomalies identified.</div>`;
+    else notificationsList.innerHTML = notificationsHtml;
+  }
+</script>
+</body>
+</html>
