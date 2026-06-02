@@ -22,6 +22,23 @@ window.SensioData = {
       window.SensioData.sourceFile = streamPayload.sourceFile;
       
       console.log(`⚡ Excel Sheet connected successfully! Loaded ${streamPayload.tenders.length} active rows into UI.`);
+      
+      // ──── AUTOMATED WATCHLIST RE-SYNC WITH PYTHON BACKEND FOR GMAIL ALERTS ────
+      const saved = localStorage.getItem('sensio_saved_tenders');
+      const savedIds = saved ? JSON.parse(saved) : [];
+      
+      // Send a silent background request for each saved item so server.py knows about them on launch
+      savedIds.forEach(id => {
+        fetch('http://localhost:5000/api/save-tender', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenderId: id, isSaved: true })
+        })
+        .then(res => res.json())
+        .then(data => console.log(`[Startup Sync]: Watchlist asset ${id} aligned with Gmail pipeline.`))
+        .catch(err => console.error("[Startup Sync Failure]: Couldn't reach email engine node:", err));
+      });
+
     } else {
       throw new Error(`Server returned invalid status code: ${request.status}`);
     }
