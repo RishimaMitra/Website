@@ -54,7 +54,8 @@ def send_gmail_notification(subject, html_content):
 # ═══════════════════════════════════════════════════════════════
 def calculate_days_remaining(closing_date_str):
     try:
-        anchor_date = pd.to_datetime("2026-05-21")
+        # Dynamic fix: always checks against today's date instead of a hardcoded day
+        anchor_date = pd.to_datetime(datetime.now().date())
         closing_date = pd.to_datetime(str(closing_date_str).split(' ')[0])
         return (closing_date - anchor_date).days
     except:
@@ -68,8 +69,7 @@ def stream_excel_data():
     excel_path = "live_tenders_pipeline.xlsx"
     
     if not os.path.exists(excel_path):
-        return jsonify({"error": "live_tenders_pipeline.xlsx file not found locally", "tenders": []}), 200
-
+        return jsonify({"error": f"{excel_path} file not found locally", "tenders": []}), 200
     try:
         # Read the Excel sheet using pandas
         df = pd.read_excel(excel_path)
