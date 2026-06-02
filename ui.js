@@ -42,6 +42,7 @@ function isTenderSaved(id) {
 }
 
 /* CROSS-COMPATIBLE ACTION DISPATCHER FOR SAVE EVENT CLICK */
+/* CROSS-COMPATIBLE ACTION DISPATCHER FOR SAVE EVENT CLICK */
 function handleSaveToggle(tenderId, element) {
   const isSaved = toggleSaveTender(tenderId);
   if (isSaved) {
@@ -54,6 +55,21 @@ function handleSaveToggle(tenderId, element) {
     element.title = 'Save Tender';
   }
   
+  // ──── SYNC SAVE STATE WITH PYTHON FLASK BACKEND FOR GMAIL TRIGGERS ────
+  fetch('http://localhost:5000/api/save-tender', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      tenderId: tenderId,
+      isSaved: isSaved
+    })
+  })
+  .then(response => response.json())
+  .then(data => console.log('[Sync Server App State]: Cache updated, saved count is', data.savedCount))
+  .catch(err => console.error('[Sync Server App Failure]: Could not connect to notification pipeline.', err));
+
   // Conditionally refresh active page rendering pipelines
   if (typeof executePipelineQueryRender === 'function') executePipelineQueryRender();
   if (typeof renderSavedTenders === 'function') renderSavedTenders();
