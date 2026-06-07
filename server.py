@@ -3,11 +3,20 @@ from flask_cors import CORS
 import pandas as pd
 import os
 import smtplib
+import datetime
+import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 app = Flask(__name__)
-CORS(app) # Keeps browser security happy
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+@app.after_request
+def apply_cors_headers(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
 
 # In-memory trackers for runtime state synchronization
 SAVED_TENDERS_DB = set()
@@ -92,7 +101,7 @@ def stream_excel_data():
                 
             raw_budget = row.get("INR Budget Maximum", 0)
             try:
-                budget_inr = int(raw_budget)
+                budget_inr = int(re.sub(r'[^\d]', '', str(raw_budget)))
             except:
                 budget_inr = 0
                 
@@ -101,6 +110,8 @@ def stream_excel_data():
             link = row.get("Tender URL", "https://google.com")
             if isinstance(link, dict) and "text" in link:
                 link = link["text"]
+
+            print(budget_inr)
 
             # Format to matches frontend data.js architecture requirements
             tenders_pool.append({
@@ -187,4 +198,4 @@ def sync_saved_state():
     return jsonify({"status": "success", "savedCount": len(SAVED_TENDERS_DB)}), 200
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    app.run(host='127.0.0.1', port=5001, debug=True)

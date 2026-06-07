@@ -56,7 +56,7 @@ function handleSaveToggle(tenderId, element) {
   }
   
   // ──── SYNC SAVE STATE WITH PYTHON FLASK BACKEND FOR GMAIL TRIGGERS ────
-  fetch('http://localhost:5000/api/save-tender', {
+  fetch('http://127.0.0.1:5001/api/save-tender', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

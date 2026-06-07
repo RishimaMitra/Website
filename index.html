@@ -30,9 +30,6 @@
       <a href="saved.html" class="nav-item">
         <span class="nav-icon"></span><span class="nav-label">Saved Tenders</span>
       </a>
-      <a href="alerts.html" class="nav-item">
-        <span class="nav-icon"></span><span class="nav-label">Alerts & Alerts</span>
-      </a>
       <a href="analytics.html" class="nav-item">
         <span class="nav-icon"></span><span class="nav-label">Analytics Suite</span>
       </a>
@@ -105,10 +102,12 @@
 <script src="data.js"></script>
 <script src="ui.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  performanceChartInstance = null;
+  setInterval(() => {
+    console.log('Refreshing dashboard data to reflect latest scraper updates...');
     renderTopTenWidget();
     renderTopTenPerformanceChart();
-  });
+  }, 3000); // Refresh every 30 seconds to reflect new data from scrapers
 
   function renderTopTenWidget() {
     const container = document.getElementById('topTenContainer');
@@ -117,6 +116,7 @@
     const records = [...window.SensioData.tenders]
       .sort((a, b) => b.relevancyScore - a.relevancyScore)
       .slice(0, 10);
+    
 
     container.innerHTML = records.map(item => {
       const remainingDays = calculateDaysRemaining(item.closingDate);
@@ -159,6 +159,10 @@
     const ctx = document.getElementById('topTenPerformanceChart');
     if (!ctx) return;
 
+      if (performanceChartInstance !== null) {
+    performanceChartInstance.destroy();
+  }
+
     const records = [...window.SensioData.tenders]
       .sort((a, b) => b.relevancyScore - a.relevancyScore)
       .slice(0, 10);
@@ -167,7 +171,7 @@
     const relevancyData = records.map(item => (item.relevancyScore * 100).toFixed(0));
     const budgetDataM = records.map(item => (item.budgetINR / 1000000).toFixed(1));
 
-    new Chart(ctx, {
+    performanceChartInstance = new Chart(ctx, {
       type: 'line',
       data: {
         labels: labels,

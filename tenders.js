@@ -1,11 +1,23 @@
 /* ═══════════════════════════════════════
    PIPELINE FILTER ENGINE IMPLEMENTATION
    ════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', () => {
+
+const loadTenderUI = () => {
   initializeFilterDropdowns();
   executePipelineQueryRender();
   registerFilterInputListeners();
-});
+};
+
+const onTenderPageReady = () => {
+  const dataReady = window.SensioData?.ready ?? Promise.resolve();
+  dataReady.then(loadTenderUI).catch(() => loadTenderUI());
+};
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', onTenderPageReady);
+} else {
+  onTenderPageReady();
+}
 
 function initializeFilterDropdowns() {
   const select = document.getElementById('countrySelector');
